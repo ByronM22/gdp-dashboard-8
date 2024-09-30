@@ -53,16 +53,16 @@ utilidad_neta = [ingreso - egreso for ingreso, egreso in zip(ingresos, total_egr
 # Añadir la inversión inicial como una pérdida en el año 0
 utilidad_neta.insert(0, -inversion_inicial)
 
-# Calcular el Valor Actual (VA), donde el año 0 es negativo y los demás años positivos
-valores_actuales = [utilidad_neta[0]]  # Incluir la inversión inicial como valor negativo en el VA
+# Calcular el Valor Actual (VA)
+valores_actuales = [utilidad_neta[0]]
 for i in range(1, n_años + 1):
     valor_actual = npf.pv(rate=tasa_descuento, nper=i, pmt=0, fv=utilidad_neta[i])
-    valores_actuales.append(abs(valor_actual))  # Los VA a partir del año 1 deben ser positivos
+    valores_actuales.append(abs(valor_actual))
 
 # Inicializar correctamente la lista de "Recuperación" (valores acumulados)
-valores_acumulados = [valores_actuales[0]]  # Empezamos con el valor inicial (negativo) de la inversión
+valores_acumulados = [valores_actuales[0]]
 
-# Cálculo de la recuperación para cada año (siguiendo la fórmula correcta)
+# Cálculo de la recuperación para cada año
 for i in range(1, len(valores_actuales)):
     valores_acumulados.append(valores_acumulados[i - 1] + valores_actuales[i])
 
@@ -75,12 +75,12 @@ tabla = pd.DataFrame({
     "Gastos Fijos": [0] + gastos_fijos,
     "Total Egresos": [inversion_inicial] + total_egresos,
     "Utilidad Neta": utilidad_neta,
-    "Valor Actual (VA)": valores_actuales,  # Los valores actuales ahora son positivos a partir del año 1
-    "Recuperación": valores_acumulados  # Valores acumulados corregidos con la fórmula adecuada
+    "Valor Actual (VA)": valores_actuales,
+    "Recuperación": valores_acumulados
 })
 
 # Mostrar tabla de resultados
-st.subheader("Tabla de Flujos de Caja")
+st.subheader("Tabla de Flujos de Caja (Escenario Original)")
 st.dataframe(tabla)
 
 # Calcular VAN, TIR y VAE
@@ -88,42 +88,83 @@ van = npf.npv(tasa_descuento, utilidad_neta)
 tir = npf.irr(utilidad_neta)
 vae = van * tasa_descuento / (1 - (1 + tasa_descuento) ** -n_años)
 
-# Calcular el periodo de recuperación (payback) usando la columna "Recuperación"
-recuperacion_positiva = [i for i, va in enumerate(valores_acumulados) if va >= 0]
-
-if recuperacion_positiva:
-    año_recuperacion = recuperacion_positiva[0]  # El año en el que se empieza a recuperar
-    flujo_acumulado_anterior = valores_acumulados[año_recuperacion - 1]  # El saldo acumulado negativo
-    flujo_siguiente_valor_actual = valores_actuales[año_recuperacion]  # El flujo que permite recuperarse
-    
-    # Corrección de cálculo de la fracción del año, el cálculo ahora se hace sobre el valor anterior y el siguiente flujo
-    fraccion_año = abs(flujo_acumulado_anterior) / flujo_siguiente_valor_actual
-    fraccion_dias = fraccion_año * 365  # Multiplicamos por los días del año
-    payback_meses = fraccion_dias // 30  # Convertimos a meses
-    payback_dias = fraccion_dias % 30  # El resto son los días
-
-    payback_años = año_recuperacion - 1  # Ajuste: el payback ocurre en el año anterior (año 2)
-    payback_meses = int(payback_meses)
-    payback_dias = int(payback_dias)
-else:
-    payback_años = payback_meses = payback_dias = "No se recupera"
-
-# Mostrar el resultado del periodo de recuperación
-st.write(f"**Periodo de recuperación (Payback):** {payback_años} años, {payback_meses} meses, {payback_dias} días")
-
 # Mostrar VAN, TIR, VAE y Payback
-st.subheader("Resultados")
+st.subheader("Resultados Escenario Original")
 st.write(f"**Valor Actual Neto (VAN):** ${van:,.2f}")
 st.write(f"**Tasa Interna de Retorno (TIR):** {tir * 100:.2f}%")
 st.write(f"**Valor Anual Equivalente (VAE):** ${vae:,.2f}")
-st.write(f"**Periodo de recuperación (Payback):** {payback_años} años, {payback_meses} meses, {payback_dias} días")
 
-# Calcular VAN Ingresos y VAN Egresos
+# Cálculo del periodo de recuperación (Payback)
+payback = None
+for i, acumulado in enumerate(valores_acumulados):
+    if acumulado >= 0:
+        payback = i
+        break
+
+if payback is not None:
+    meses = abs((valores_acumulados[payback - 1] * 12) / (valores_acumulados[payback] - valores_acumulados[payback - 1]))
+    st.write(f"**Periodo de recuperación (Payback):** {abs(payback - 1)} años, {int(abs(meses))} meses, {int(abs((meses % 1) * 30))} días")
+else:
+    st.write("**Periodo de recuperación (Payback):** No se recupera la inversión")
+
+# Calcular VAN de ingresos y egresos por separado
 van_ingresos = npf.npv(tasa_descuento, [0] + ingresos)
 van_egresos = npf.npv(tasa_descuento, [inversion_inicial] + total_egresos)
-razon_van = van_ingresos / van_egresos if van_egresos != 0 else float('inf')
-
-# Mostrar VAN Ingresos, VAN Egresos y razón entre ellos
 st.write(f"**VAN Ingresos:** ${van_ingresos:,.2f}")
 st.write(f"**VAN Egresos:** ${van_egresos:,.2f}")
+
+# Calcular la razón VAN ingresos/egresos
+razon_van = van_ingresos / van_egresos
 st.write(f"**Razón VAN Ingresos/VAN Egresos:** {razon_van:.2f}")
+
+# Escenario pesimista: Agregar opción de ajuste
+st.subheader("Escenario Pesimista")
+ajuste_opcion = st.selectbox("Seleccione qué variable desea ajustar:", ["Ingresos", "Costo Variable", "Gastos Fijos"])
+
+van_objetivo = st.number_input("VAN objetivo (0 para VAN igual a cero):", value=0.0)
+nuevo_ingreso_base = ingreso_base
+nuevo_costo_variable_base = costo_variable_base
+nuevo_gasto_fijo_base = gasto_fijo_base
+tolerancia = 0.01
+diferencia_van = np.inf
+
+while abs(diferencia_van) > tolerancia:
+    if ajuste_opcion == "Ingresos":
+        ingresos_pesimistas = [nuevo_ingreso_base * ((1 + crecimiento_ingresos) ** i) for i in range(n_años)]
+        ingresos_pesimistas[-1] += valor_rescate
+    else:
+        ingresos_pesimistas = [ingreso_base * ((1 + crecimiento_ingresos) ** i) for i in range(n_años)]
+        ingresos_pesimistas[-1] += valor_rescate
+
+    if ajuste_opcion == "Costo Variable":
+        costos_variables_pesimista = [nuevo_costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
+    else:
+        costos_variables_pesimista = [costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
+
+    if ajuste_opcion == "Gastos Fijos":
+        gastos_fijos_pesimista = [nuevo_gasto_fijo_base * ((1 + crecimiento_gastos_fijos) ** i) for i in range(n_años)]
+    else:
+        gastos_fijos_pesimista = [gasto_fijo_base * ((1 + crecimiento_gastos_fijos) ** i) for i in range(n_años)]
+
+    costos_de_ventas_pesimista = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables_pesimista)]
+    total_egresos_pesimista = [cv + gf for cv, gf in zip(costos_de_ventas_pesimista, gastos_fijos_pesimista)]
+    utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
+    utilidad_neta_pesimista.insert(0, -inversion_inicial)
+    van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
+    diferencia_van = van_pesimista - van_objetivo
+
+    # Ajustar la variable seleccionada
+    if ajuste_opcion == "Ingresos":
+        nuevo_ingreso_base -= diferencia_van / 100
+    elif ajuste_opcion == "Costo Variable":
+        nuevo_costo_variable_base += diferencia_van / 10000
+    elif ajuste_opcion == "Gastos Fijos":
+        nuevo_gasto_fijo_base += diferencia_van / 100
+
+# Mostrar resultados del ajuste
+if ajuste_opcion == "Ingresos":
+    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f},  los ingresos en el año 1 deberían ser de ${nuevo_ingreso_base:,.2f}.")
+elif ajuste_opcion == "Costo Variable":
+    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, el costo variable en el año 1 debería ser de {nuevo_costo_variable_base * 100:.2f}%.")
+elif ajuste_opcion == "Gastos Fijos":
+    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, los gastos fijos en el año 1 deberían ser de ${nuevo_gasto_fijo_base:,.2f}.")
