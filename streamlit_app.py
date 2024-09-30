@@ -3,5 +3,5 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Título de la aplicación
-st.subheader("Simulació")
-st.subheader("Autor: Byron Méndez").
+st.subheader("Simulación")
+st.subheader("Autor: Byron Méndez")
