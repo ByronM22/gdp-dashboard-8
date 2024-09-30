@@ -157,7 +157,7 @@ while abs(diferencia_van) > tolerancia:
     if ajuste_opcion == "Ingresos":
         nuevo_ingreso_base -= diferencia_van / 100
     elif ajuste_opcion == "Costo Variable":
-        nuevo_costo_variable_base += diferencia_van / 10000
+        nuevo_costo_variable_base += diferencia_van / 100
     elif ajuste_opcion == "Gastos Fijos":
         nuevo_gasto_fijo_base += diferencia_van / 100
 
