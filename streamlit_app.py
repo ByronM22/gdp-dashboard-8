@@ -128,41 +128,29 @@ nuevo_gasto_fijo_base = gasto_fijo_base
 tolerancia = 0.01
 diferencia_van = np.inf
 
-while abs(diferencia_van) > tolerancia:
-    if ajuste_opcion == "Ingresos":
+# Ajuste para alcanzar el VAN objetivo
+if ajuste_opcion == "Ingresos":
+    while abs(diferencia_van) > tolerancia:
+        # Recalcular ingresos pesimistas
         ingresos_pesimistas = [nuevo_ingreso_base * ((1 + crecimiento_ingresos) ** i) for i in range(n_años)]
         ingresos_pesimistas[-1] += valor_rescate
-    else:
-        ingresos_pesimistas = [ingreso_base * ((1 + crecimiento_ingresos) ** i) for i in range(n_años)]
-        ingresos_pesimistas[-1] += valor_rescate
-
-    if ajuste_opcion == "Costo Variable":
-        costos_variables_pesimista = [nuevo_costo_variable_base + diferencia_van / 10000 for i in range(n_años)]  # Corregido para evitar NaN
-    else:
-        costos_variables_pesimista = [costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
-
-    if ajuste_opcion == "Gastos Fijos":
-        gastos_fijos_pesimista = [nuevo_gasto_fijo_base * ((1 + crecimiento_gastos_fijos) ** i) for i in range(n_años)]
-    else:
-        gastos_fijos_pesimista = [gasto_fijo_base * ((1 + crecimiento_gastos_fijos) ** i) for i in range(n_años)]
-
-    costos_de_ventas_pesimista = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables_pesimista)]
-    total_egresos_pesimista = [cv + gf for cv, gf in zip(costos_de_ventas_pesimista, gastos_fijos_pesimista)]
-    utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
-    utilidad_neta_pesimista.insert(0, -inversion_inicial)
-    van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
-
-    diferencia_van = van_pesimista - van_objetivo
-
-    if ajuste_opcion == "Ingresos":
-        nuevo_ingreso_base -= 100  # Ajuste fino para ingresos
-    elif ajuste_opcion == "Costo Variable":
-        nuevo_costo_variable_base += 0.01  # Ajuste fino para costo variable
-    elif ajuste_opcion == "Gastos Fijos":
-        nuevo_gasto_fijo_base -= 100  # Ajuste fino para gastos fijos
+        
+        # Recalcular costos de ventas y utilidad neta
+        costos_de_ventas_pesimista = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables)]
+        total_egresos_pesimista = [cv + gf for cv, gf in zip(costos_de_ventas_pesimista, gastos_fijos)]
+        utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
+        utilidad_neta_pesimista.insert(0, -inversion_inicial)
+        
+        # Calcular VAN
+        van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
+        diferencia_van = van_pesimista - van_objetivo
+        
+        # Imprimir depuración
+        st.write(f"Nuevo ingreso base: {nuevo_ingreso_base:.2f}, VAN: {van_pesimista:.2f}, Diferencia: {diferencia_van:.2f}")
+        
+        # Ajuste fino
+        nuevo_ingreso_base += 100  # Ajustar ingreso en pasos de 100
 
 # Mostrar resultados del escenario pesimista
 st.write(f"**Nuevo Ingreso Base en Escenario Pesimista:** ${nuevo_ingreso_base:,.2f}")
-st.write(f"**Nuevo Costo Variable Base en Escenario Pesimista:** {nuevo_costo_variable_base * 100:.2f}%")
-st.write(f"**Nuevo Gasto Fijo Base en Escenario Pesimista:** ${nuevo_gasto_fijo_base:,.2f}")
 st.write(f"**VAN en Escenario Pesimista:** ${van_pesimista:,.2f}")
