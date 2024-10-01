@@ -138,15 +138,17 @@ while abs(diferencia_van) > tolerancia:
 
     if ajuste_opcion == "Costo Variable":
         costos_variables_pesimista = [nuevo_costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
+        # Ajustar el porcentaje de costos variables
+        costos_de_ventas_pesimista = [ingreso * nuevo_costo_variable_base for ingreso in ingresos_pesimistas]
     else:
         costos_variables_pesimista = [costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
+        costos_de_ventas_pesimista = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables_pesimista)]
 
     if ajuste_opcion == "Gastos Fijos":
         gastos_fijos_pesimista = [nuevo_gasto_fijo_base * ((1 + crecimiento_gastos_fijos) ** i) for i in range(n_años)]
     else:
         gastos_fijos_pesimista = [gasto_fijo_base * ((1 + crecimiento_gastos_fijos) ** i) for i in range(n_años)]
 
-    costos_de_ventas_pesimista = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables_pesimista)]
     total_egresos_pesimista = [cv + gf for cv, gf in zip(costos_de_ventas_pesimista, gastos_fijos_pesimista)]
     utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
     utilidad_neta_pesimista.insert(0, -inversion_inicial)
@@ -157,7 +159,8 @@ while abs(diferencia_van) > tolerancia:
     if ajuste_opcion == "Ingresos":
         nuevo_ingreso_base -= diferencia_van / 100
     elif ajuste_opcion == "Costo Variable":
-        nuevo_costo_variable_base += diferencia_van / 10000
+        # Ajustar el porcentaje de costo variable con un valor más significativo
+        nuevo_costo_variable_base += diferencia_van / 1000
     elif ajuste_opcion == "Gastos Fijos":
         nuevo_gasto_fijo_base += diferencia_van / 100
 
