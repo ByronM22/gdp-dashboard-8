@@ -122,35 +122,45 @@ st.subheader("Escenario Pesimista")
 ajuste_opcion = st.selectbox("Seleccione qué variable desea ajustar:", ["Ingresos", "Costo Variable", "Gastos Fijos"])
 
 van_objetivo = st.number_input("VAN objetivo (0 para VAN igual a cero):", value=0.0)
+
+# Inicializar variables
 nuevo_ingreso_base = ingreso_base
 nuevo_costo_variable_base = costo_variable_base
 nuevo_gasto_fijo_base = gasto_fijo_base
 tolerancia = 0.01
 diferencia_van = np.inf
+max_iteraciones = 100  # Límite de iteraciones
+iteracion_actual = 0
 
 # Ajuste para alcanzar el VAN objetivo
 if ajuste_opcion == "Ingresos":
-    while abs(diferencia_van) > tolerancia:
+    while abs(diferencia_van) > tolerancia and iteracion_actual < max_iteraciones:
         # Recalcular ingresos pesimistas
         ingresos_pesimistas = [nuevo_ingreso_base * ((1 + crecimiento_ingresos) ** i) for i in range(n_años)]
         ingresos_pesimistas[-1] += valor_rescate
         
         # Recalcular costos de ventas y utilidad neta
-        costos_de_ventas_pesimista = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables)]
-        total_egresos_pesimista = [cv + gf for cv, gf in zip(costos_de_ventas_pesimista, gastos_fijos)]
-        utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
+        costos_de_ventas_pesimistas = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables)]
+        total_egresos_pesimistas = [cv + gf for cv, gf in zip(costos_de_ventas_pesimistas, gastos_fijos)]
+        utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimistas)]
         utilidad_neta_pesimista.insert(0, -inversion_inicial)
-        
-        # Calcular VAN
+
+        # Calcular VAN para los ingresos ajustados
         van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
         diferencia_van = van_pesimista - van_objetivo
         
-        # Imprimir depuración
-        st.write(f"Nuevo ingreso base: {nuevo_ingreso_base:.2f}, VAN: {van_pesimista:.2f}, Diferencia: {diferencia_van:.2f}")
-        
-        # Ajuste fino
+        # Ajustar ingreso base
         nuevo_ingreso_base += 100  # Ajustar ingreso en pasos de 100
+        iteracion_actual += 1
 
-# Mostrar resultados del escenario pesimista
-st.write(f"**Nuevo Ingreso Base en Escenario Pesimista:** ${nuevo_ingreso_base:,.2f}")
-st.write(f"**VAN en Escenario Pesimista:** ${van_pesimista:,.2f}")
+    # Mostrar resultados del escenario pesimista
+    st.write(f"**Nuevo Ingreso Base en Escenario Pesimista:** ${nuevo_ingreso_base:,.2f}")
+    st.write(f"**VAN en Escenario Pesimista:** ${van_pesimista:,.2f}")
+
+elif ajuste_opcion == "Costo Variable":
+    # Lógica similar para ajustar el costo variable
+    pass  # Aquí iría la lógica para ajustar el costo variable
+
+elif ajuste_opcion == "Gastos Fijos":
+    # Lógica similar para ajustar los gastos fijos
+    pass  # Aquí iría la lógica para ajustar los gastos fijos
