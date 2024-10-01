@@ -4,7 +4,8 @@ import pandas as pd
 import numpy_financial as npf
 
 # Título de la aplicación
-st.title("Análisis de Flujos de Caja con Valor de Rescate y Crecimiento Variable")
+st.subheader("Análisis de Flujos de Caja con Valor de Rescate y Crecimiento Variable")
+st.subheader("Autor: Byron Méndez")
 
 # Entrada de datos
 n_años = st.number_input("Número de años del proyecto:", min_value=1, value=5, step=1)
@@ -80,7 +81,7 @@ tabla = pd.DataFrame({
 })
 
 # Mostrar tabla de resultados
-st.subheader("Tabla de Flujos de Caja (Escenario Original)")
+st.subheader("Tabla de Flujos de Caja")
 st.dataframe(tabla)
 
 # Calcular VAN, TIR y VAE
@@ -89,7 +90,7 @@ tir = npf.irr(utilidad_neta)
 vae = van * tasa_descuento / (1 - (1 + tasa_descuento) ** -n_años)
 
 # Mostrar VAN, TIR, VAE y Payback
-st.subheader("Resultados Escenario Original")
+st.subheader("Resultados")
 st.write(f"**Valor Actual Neto (VAN):** ${van:,.2f}")
 st.write(f"**Tasa Interna de Retorno (TIR):** {tir * 100:.2f}%")
 st.write(f"**Valor Anual Equivalente (VAE):** ${vae:,.2f}")
