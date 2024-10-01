@@ -122,22 +122,23 @@ st.subheader("Escenario Pesimista")
 ajuste_opcion = st.selectbox("Seleccione qué variable desea ajustar:", ["Ingresos", "Costo Variable", "Gastos Fijos"])
 
 van_objetivo = st.number_input("VAN objetivo (0 para VAN igual a cero):", value=0.0)
-nuevo_costo_variable_base = costo_variable_base
 tolerancia = 0.01
 diferencia_van = np.inf
 
 # Mantener ingresos y gastos fijos constantes
 ingresos_pesimistas = ingresos[:]
 gastos_fijos_pesimistas = gastos_fijos[:]
+costo_variable_pesimista = costo_variable_base
 
+# Ajuste iterativo para llegar al VAN objetivo
 while abs(diferencia_van) > tolerancia:
     if ajuste_opcion == "Costo Variable":
-        # Restricciones: costo variable entre 0% y 100% de ingresos
-        nuevos_costos_variables_pesimistas = [
-            min(max(nuevo_costo_variable_base * ((1 + crecimiento_costo_variable) ** i), 0), 1)
+        # Restricción: costo variable entre 0% y 100% de ingresos
+        costos_variables_pesimistas = [
+            min(max(costo_variable_pesimista * ((1 + crecimiento_costo_variable) ** i), 0), 1)
             for i in range(n_años)
         ]
-        costos_de_ventas_pesimistas = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, nuevos_costos_variables_pesimistas)]
+        costos_de_ventas_pesimistas = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables_pesimistas)]
     else:
         costos_de_ventas_pesimistas = costos_de_ventas[:]
 
@@ -150,7 +151,4 @@ while abs(diferencia_van) > tolerancia:
 
     # Ajustar la variable seleccionada
     if ajuste_opcion == "Costo Variable":
-        nuevo_costo_variable_base += diferencia_van / 10000
-
-# Mostrar resultados del ajuste
-st.write(f"**Costo Variable Ajustado:** {nuevo_costo_variable_base * 100:.2f}%")
+        costo_variable_pesimista += diferencia_van / 100
