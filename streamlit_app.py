@@ -26,7 +26,7 @@ st.subheader("Ingresar los flujos de caja")
 
 # Ingresar ingresos, costos variables y gastos fijos para cada año
 ingreso_base = st.number_input("Ingresos para el primer año:", value=100000.00)
-costo_variable_base = st.number_input("Costo variable para el primer año (en monto):", value=40000.00)  # Cambiado a monto en vez de porcentaje
+costo_variable_base = st.number_input("Porcentaje de costo variable para el primer año (%):", value=40.0) / 100
 gasto_fijo_base = st.number_input("Gastos fijos para el primer año:", value=20000.00)
 
 for i in range(n_años):
@@ -46,7 +46,8 @@ for i in range(n_años):
 ingresos[-1] += valor_rescate
 
 # Calcular el costo de ventas y utilidad neta
-total_egresos = [cv + gf for cv, gf in zip(costos_variables, gastos_fijos)]
+costos_de_ventas = [ingreso * cv for ingreso, cv in zip(ingresos, costos_variables)]
+total_egresos = [cv + gf for cv, gf in zip(costos_de_ventas, gastos_fijos)]
 utilidad_neta = [ingreso - egreso for ingreso, egreso in zip(ingresos, total_egresos)]
 
 # Añadir la inversión inicial como una pérdida en el año 0
@@ -69,7 +70,8 @@ for i in range(1, len(valores_actuales)):
 tabla = pd.DataFrame({
     "Año": [f"Año {i}" for i in range(n_años + 1)],
     "Ingresos": [0] + ingresos,
-    "Costo Variable": [0] + costos_variables,
+    "Costo Variable (%)": [0] + [cv * 100 for cv in costos_variables],
+    "Costo de Ventas": [0] + costos_de_ventas,
     "Gastos Fijos": [0] + gastos_fijos,
     "Total Egresos": [inversion_inicial] + total_egresos,
     "Utilidad Neta": utilidad_neta,
@@ -104,6 +106,16 @@ if payback is not None:
     st.write(f"**Periodo de recuperación (Payback):** {abs(payback - 1)} años, {int(abs(meses))} meses, {int(abs((meses % 1) * 30))} días")
 else:
     st.write("**Periodo de recuperación (Payback):** No se recupera la inversión")
+
+# Calcular VAN de ingresos y egresos por separado
+van_ingresos = npf.npv(tasa_descuento, [0] + ingresos)
+van_egresos = npf.npv(tasa_descuento, [inversion_inicial] + total_egresos)
+st.write(f"**VAN Ingresos:** ${van_ingresos:,.2f}")
+st.write(f"**VAN Egresos:** ${van_egresos:,.2f}")
+
+# Calcular la razón VAN ingresos/egresos
+razon_van = van_ingresos / van_egresos
+st.write(f"**Razón VAN Ingresos/VAN Egresos:** {razon_van:.2f}")
 
 # Escenario pesimista: Agregar opción de ajuste
 st.subheader("Escenario Pesimista")
@@ -145,7 +157,7 @@ while abs(diferencia_van) > tolerancia:
     if ajuste_opcion == "Ingresos":
         nuevo_ingreso_base -= diferencia_van / 100
     elif ajuste_opcion == "Costo Variable":
-        nuevo_costo_variable_base += diferencia_van / 10000  # Ajuste más preciso para costo variable
+        nuevo_costo_variable_base += diferencia_van / 10000
     elif ajuste_opcion == "Gastos Fijos":
         nuevo_gasto_fijo_base += diferencia_van / 100
 
@@ -153,6 +165,6 @@ while abs(diferencia_van) > tolerancia:
 if ajuste_opcion == "Ingresos":
     st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f},  los ingresos en el año 1 deberían ser de ${nuevo_ingreso_base:,.2f}.")
 elif ajuste_opcion == "Costo Variable":
-    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, el costo variable en el año 1 debería ser de ${nuevo_costo_variable_base:,.2f}.")
+    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, el costo variable en el año 1 debería ser de {nuevo_costo_variable_base * 100:.2f}%.")
 elif ajuste_opcion == "Gastos Fijos":
     st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, los gastos fijos en el año 1 deberían ser de ${nuevo_gasto_fijo_base:,.2f}.")
