@@ -107,48 +107,90 @@ if payback is not None:
 else:
     st.write("**Periodo de recuperación (Payback):** No se recupera la inversión")
 
-# Calcular VAN de ingresos y egresos por separado
-van_ingresos = npf.npv(tasa_descuento, [0] + ingresos)
-van_egresos = npf.npv(tasa_descuento, [inversion_inicial] + total_egresos)
-st.write(f"**VAN Ingresos:** ${van_ingresos:,.2f}")
-st.write(f"**VAN Egresos:** ${van_egresos:,.2f}")
-
-# Calcular la razón VAN ingresos/egresos
-razon_van = van_ingresos / van_egresos
-st.write(f"**Razón VAN Ingresos/VAN Egresos:** {razon_van:.2f}")
-
 # Escenario pesimista: Agregar opción de ajuste
 st.subheader("Escenario Pesimista")
 ajuste_opcion = st.selectbox("Seleccione qué variable desea ajustar:", ["Ingresos", "Costo Variable", "Gastos Fijos"])
 
 van_objetivo = st.number_input("VAN objetivo (0 para VAN igual a cero):", value=0.0)
+nuevo_ingreso_base = ingreso_base
+nuevo_costo_variable_base = costo_variable_base
+nuevo_gasto_fijo_base = gasto_fijo_base
 tolerancia = 0.01
 diferencia_van = np.inf
 
-# Mantener ingresos y gastos fijos constantes
-ingresos_pesimistas = ingresos[:]
-gastos_fijos_pesimistas = gastos_fijos[:]
-costo_variable_pesimista = costo_variable_base
-
-# Ajuste iterativo para llegar al VAN objetivo
 while abs(diferencia_van) > tolerancia:
-    if ajuste_opcion == "Costo Variable":
-        # Restricción: costo variable entre 0% y 100% de ingresos
-        costos_variables_pesimistas = [
-            min(max(costo_variable_pesimista * ((1 + crecimiento_costo_variable) ** i), 0), 1)
-            for i in range(n_años)
-        ]
-        costos_de_ventas_pesimistas = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables_pesimistas)]
+    if ajuste_opcion == "Ingresos":
+        ingresos_pesimistas = [nuevo_ingreso_base * ((1 + crecimiento_ingresos) ** i) for i in range(n_años)]
+        ingresos_pesimistas[-1] += valor_rescate
     else:
-        costos_de_ventas_pesimistas = costos_de_ventas[:]
+        ingresos_pesimistas = ingresos
 
-    total_egresos_pesimistas = [cv + gf for cv, gf in zip(costos_de_ventas_pesimistas, gastos_fijos_pesimistas)]
-    utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimistas)]
+    if ajuste_opcion == "Costo Variable":
+        costos_variables_pesimista = [
+            min(nuevo_costo_variable_base * ((1 + crecimiento_costo_variable) ** i), 1) for i in range(n_años)
+        ]  # Mantener costos por debajo de ingresos
+    else:
+        costos_variables_pesimista = costos_variables
+
+    if ajuste_opcion == "Gastos Fijos":
+        gastos_fijos_pesimista = [nuevo_gasto_fijo_base * ((1 + crecimiento_gastos_fijos) ** i) for i in range(n_años)]
+    else:
+        gastos_fijos_pesimista = gastos_fijos
+
+    costos_de_ventas_pesimista = [ingreso * cv for ingreso, cv in zip(ingresos_pesimistas, costos_variables_pesimista)]
+    total_egresos_pesimista = [cv + gf for cv, gf in zip(costos_de_ventas_pesimista, gastos_fijos_pesimista)]
+    utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
     utilidad_neta_pesimista.insert(0, -inversion_inicial)
-
     van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
     diferencia_van = van_pesimista - van_objetivo
 
     # Ajustar la variable seleccionada
-    if ajuste_opcion == "Costo Variable":
-        costo_variable_pesimista += diferencia_van / 100
+    if ajuste_opcion == "Ingresos":
+        nuevo_ingreso_base -= diferencia_van / 100
+    elif ajuste_opcion == "Costo Variable":
+        nuevo_costo_variable_base = max(min(nuevo_costo_variable_base + diferencia_van / 10000, 1), 0.01)
+    elif ajuste_opcion == "Gastos Fijos":
+        nuevo_gasto_fijo_base -= diferencia_van / 100
+
+# Crear DataFrame para la tabla de resultados pesimistas
+tabla_pesimista = pd.DataFrame({
+    "Año": [f"Año {i}" for i in range(n_años + 1)],
+    "Ingresos": [0] + ingresos_pesimistas,
+    "Costo Variable (%)": [0] + [cv * 100 for cv in costos_variables_pesimista],
+    "Costo de Ventas": [0] + costos_de_ventas_pesimista,
+    "Gastos Fijos": [0] + gastos_fijos_pesimista,
+    "Total Egresos": [inversion_inicial] + total_egresos_pesimista,
+    "Utilidad Neta": utilidad_neta_pesimista
+})
+
+# Mostrar tabla de resultados pesimistas
+st.subheader("Tabla de Flujos de Caja (Escenario Pesimista)")
+st.dataframe(tabla_pesimista)
+
+# Calcular VAN, TIR y VAE para el escenario pesimista
+van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
+tir_pesimista = npf.irr(utilidad_neta_pesimista)
+vae_pesimista = van_pesimista * tasa_descuento / (1 - (1 + tasa_descuento) ** -n_años)
+
+# Mostrar VAN, TIR y VAE para el escenario pesimista
+st.subheader("Resultados Escenario Pesimista")
+st.write(f"**Valor Actual Neto (VAN):** ${van_pesimista:,.2f}")
+st.write(f"**Tasa Interna de Retorno (TIR):** {tir_pesimista * 100:.2f}%")
+st.write(f"**Valor Anual Equivalente (VAE):** ${vae_pesimista:,.2f}")
+
+# Cálculo del periodo de recuperación (Payback) para el escenario pesimista
+valores_acumulados_pesimista = [utilidad_neta_pesimista[0]]
+for i in range(1, len(utilidad_neta_pesimista)):
+    valores_acumulados_pesimista.append(valores_acumulados_pesimista[i - 1] + utilidad_neta_pesimista[i])
+
+payback_pesimista = None
+for i, acumulado in enumerate(valores_acumulados_pesimista):
+    if acumulado >= 0:
+        payback_pesimista = i
+        break
+
+if payback_pesimista is not None:
+    meses_pesimista = abs((valores_acumulados_pesimista[payback_pesimista - 1] * 12) / (valores_acumulados_pesimista[payback_pesimista] - valores_acumulados_pesimista[payback_pesimista - 1]))
+    st.write(f"**Periodo de recuperación (Payback):** {abs(payback_pesimista - 1)} años, {int(abs(meses_pesimista))} meses, {int(abs((meses_pesimista % 1) * 30))} días")
+else:
+    st.write("**Periodo de recuperación (Payback):** No se recupera la inversión en el escenario pesimista")
