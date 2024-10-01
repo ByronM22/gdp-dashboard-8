@@ -137,7 +137,7 @@ while abs(diferencia_van) > tolerancia:
         ingresos_pesimistas[-1] += valor_rescate
 
     if ajuste_opcion == "Costo Variable":
-        costos_variables_pesimista = [nuevo_costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
+        costos_variables_pesimista = [nuevo_costo_variable_base + diferencia_van / 10000 for i in range(n_años)]  # Corregido para evitar NaN
     else:
         costos_variables_pesimista = [costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
 
@@ -151,20 +151,18 @@ while abs(diferencia_van) > tolerancia:
     utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
     utilidad_neta_pesimista.insert(0, -inversion_inicial)
     van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
+
     diferencia_van = van_pesimista - van_objetivo
 
-    # Ajustar la variable seleccionada
     if ajuste_opcion == "Ingresos":
-        nuevo_ingreso_base -= diferencia_van / 100
+        nuevo_ingreso_base -= 100  # Ajuste fino para ingresos
     elif ajuste_opcion == "Costo Variable":
-        nuevo_costo_variable_base += diferencia_van / 10000
+        nuevo_costo_variable_base += 0.01  # Ajuste fino para costo variable
     elif ajuste_opcion == "Gastos Fijos":
-        nuevo_gasto_fijo_base += diferencia_van / 100
+        nuevo_gasto_fijo_base -= 100  # Ajuste fino para gastos fijos
 
-# Mostrar resultados del ajuste
-if ajuste_opcion == "Ingresos":
-    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f},  los ingresos en el año 1 deberían ser de ${nuevo_ingreso_base:,.2f}.")
-elif ajuste_opcion == "Costo Variable":
-    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, el costo variable en el año 1 debería ser de {nuevo_costo_variable_base * 100:.2f}%.")
-elif ajuste_opcion == "Gastos Fijos":
-    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, los gastos fijos en el año 1 deberían ser de ${nuevo_gasto_fijo_base:,.2f}.")
+# Mostrar resultados del escenario pesimista
+st.write(f"**Nuevo Ingreso Base en Escenario Pesimista:** ${nuevo_ingreso_base:,.2f}")
+st.write(f"**Nuevo Costo Variable Base en Escenario Pesimista:** {nuevo_costo_variable_base * 100:.2f}%")
+st.write(f"**Nuevo Gasto Fijo Base en Escenario Pesimista:** ${nuevo_gasto_fijo_base:,.2f}")
+st.write(f"**VAN en Escenario Pesimista:** ${van_pesimista:,.2f}")
