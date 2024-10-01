@@ -137,10 +137,7 @@ while abs(diferencia_van) > tolerancia:
         ingresos_pesimistas[-1] += valor_rescate
 
     if ajuste_opcion == "Costo Variable":
-        costos_variables_pesimista = [
-            max(min(nuevo_costo_variable_base * ((1 + crecimiento_costo_variable) ** i), 0.99), 0.01) 
-            for i in range(n_años)
-        ]
+        costos_variables_pesimista = [nuevo_costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
     else:
         costos_variables_pesimista = [costo_variable_base * ((1 + crecimiento_costo_variable) ** i) for i in range(n_años)]
 
@@ -153,32 +150,21 @@ while abs(diferencia_van) > tolerancia:
     total_egresos_pesimista = [cv + gf for cv, gf in zip(costos_de_ventas_pesimista, gastos_fijos_pesimista)]
     utilidad_neta_pesimista = [ingreso - egreso for ingreso, egreso in zip(ingresos_pesimistas, total_egresos_pesimista)]
     utilidad_neta_pesimista.insert(0, -inversion_inicial)
-
     van_pesimista = npf.npv(tasa_descuento, utilidad_neta_pesimista)
     diferencia_van = van_pesimista - van_objetivo
 
-    # Ajuste gradual de la variable seleccionada
+    # Ajustar la variable seleccionada
     if ajuste_opcion == "Ingresos":
-        nuevo_ingreso_base -= diferencia_van / n_años
+        nuevo_ingreso_base -= diferencia_van / 100
     elif ajuste_opcion == "Costo Variable":
-        nuevo_costo_variable_base += diferencia_van / n_años
+        nuevo_costo_variable_base += diferencia_van / 10000
     elif ajuste_opcion == "Gastos Fijos":
-        nuevo_gasto_fijo_base -= diferencia_van / n_años
+        nuevo_gasto_fijo_base += diferencia_van / 100
 
-# Tabla para el escenario pesimista
-tabla_pesimista = pd.DataFrame({
-    "Año": [f"Año {i}" for i in range(n_años + 1)],
-    "Ingresos Pesimistas": [0] + ingresos_pesimistas,
-    "Costo Variable (%) Pesimista": [0] + [cv * 100 for cv in costos_variables_pesimista],
-    "Costo de Ventas Pesimista": [0] + costos_de_ventas_pesimista,
-    "Gastos Fijos Pesimistas": [0] + gastos_fijos_pesimista,
-    "Total Egresos Pesimista": [inversion_inicial] + total_egresos_pesimista,
-    "Utilidad Neta Pesimista": utilidad_neta_pesimista,
-})
-
-# Mostrar resultados del escenario pesimista
-st.subheader("Tabla de Flujos de Caja (Escenario Pesimista)")
-st.dataframe(tabla_pesimista)
-
-st.subheader("Resultados Escenario Pesimista")
-st.write(f"**Nuevo VAN Pesimista:** ${van_pesimista:,.2f}")  
+# Mostrar resultados del ajuste
+if ajuste_opcion == "Ingresos":
+    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f},  los ingresos en el año 1 deberían ser de ${nuevo_ingreso_base:,.2f}.")
+elif ajuste_opcion == "Costo Variable":
+    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, el costo variable en el año 1 debería ser de {nuevo_costo_variable_base * 100:.2f}%.")
+elif ajuste_opcion == "Gastos Fijos":
+    st.write(f"Para que el VAN sea igual a ${van_objetivo:,.2f}, los gastos fijos en el año 1 deberían ser de ${nuevo_gasto_fijo_base:,.2f}.")
