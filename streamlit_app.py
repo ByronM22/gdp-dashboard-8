@@ -8,7 +8,7 @@ st.subheader("Análisis de Flujos de Caja con Valor de Rescate y Crecimiento Var
 st.subheader("Autor: Byron Méndez")
 
 # Entrada de datos
-n_años = st.number_input("Número de años del proyecto:", min_value=1, value=5, step=1)
+n_años = st.number_input("Número de años del proyecto:", min_value=1, value=1, step=1)
 inversion_inicial = st.number_input("Inversión inicial:", value=65000.00)
 tasa_descuento = st.number_input("Tasa de descuento (%):", value=20.0) / 100
 valor_rescate = st.number_input("Valor de rescate al final del proyecto:", value=15000.0)
