@@ -11,7 +11,7 @@ st.subheader("Autor: Byron Méndez")
 n_años = st.number_input("Número de años del proyecto:", min_value=1, value=1, step=1)
 inversion_inicial = st.number_input("Inversión inicial:", value=0.00)
 tasa_descuento = st.number_input("Tasa de descuento (%):", value=0.0) / 100
-valor_rescate = st.number_input("Valor de rescate al final del proyecto:", value=15000.0)
+valor_rescate = st.number_input("Valor de rescate al final del proyecto:", value=0.0)
 
 # Entrada del crecimiento porcentual por separado
 crecimiento_ingresos = st.number_input("Crecimiento anual de ingresos (%):", value=5.0) / 100
