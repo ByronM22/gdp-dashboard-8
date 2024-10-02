@@ -8,15 +8,15 @@ st.subheader("Análisis de Flujos de Caja con Valor de Rescate y Crecimiento Var
 st.subheader("Autor: Byron Méndez")
 
 # Entrada de datos
-n_años = st.number_input("Número de años del proyecto:", min_value=1, value=5, step=1)
-inversion_inicial = st.number_input("Inversión inicial:", value=65000.00)
-tasa_descuento = st.number_input("Tasa de descuento (%):", value=20.0) / 100
-valor_rescate = st.number_input("Valor de rescate al final del proyecto:", value=15000.0)
+n_años = st.number_input("Número de años del proyecto:", min_value=1, value=0, step=1)
+inversion_inicial = st.number_input("Inversión inicial:", value=0)
+tasa_descuento = st.number_input("Tasa de descuento (%):", value=0.0) / 100
+valor_rescate = st.number_input("Valor de rescate al final del proyecto:", value=0.0)
 
 # Entrada del crecimiento porcentual por separado
-crecimiento_ingresos = st.number_input("Crecimiento anual de ingresos (%):", value=5.0) / 100
-crecimiento_costo_variable = st.number_input("Crecimiento anual de costo variable (%):", value=5.0) / 100
-crecimiento_gastos_fijos = st.number_input("Crecimiento anual de gastos fijos (%):", value=5.0) / 100
+crecimiento_ingresos = st.number_input("Crecimiento anual de ingresos (%):", value=0.0) / 100
+crecimiento_costo_variable = st.number_input("Crecimiento anual de costo variable (%):", value=0.0) / 100
+crecimiento_gastos_fijos = st.number_input("Crecimiento anual de gastos fijos (%):", value=0.0) / 100
 
 # Crear contenedores para flujos de caja y gastos
 ingresos = []
@@ -26,9 +26,9 @@ gastos_fijos = []
 st.subheader("Ingresar los flujos de caja")
 
 # Ingresar ingresos, costos variables y gastos fijos para cada año
-ingreso_base = st.number_input("Ingresos para el primer año:", value=100000.00)
-costo_variable_base = st.number_input("Porcentaje de costo variable para el primer año (%):", value=40.0) / 100
-gasto_fijo_base = st.number_input("Gastos fijos para el primer año:", value=20000.00)
+ingreso_base = st.number_input("Ingresos para el primer año:", value=0.00)
+costo_variable_base = st.number_input("Porcentaje de costo variable para el primer año (%):", value=0.0) / 100
+gasto_fijo_base = st.number_input("Gastos fijos para el primer año:", value=0.00)
 
 for i in range(n_años):
     # Aplicar el crecimiento a ingresos, costos variables y gastos fijos
