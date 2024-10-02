@@ -14,7 +14,7 @@ tasa_descuento = st.number_input("Tasa de descuento (%):", value=0.0) / 100
 valor_rescate = st.number_input("Valor de rescate al final del proyecto:", value=0.0)
 
 # Entrada del crecimiento porcentual por separado
-crecimiento_ingresos = st.number_input("Crecimiento anual de ingresos (%):", value=5.0) / 100
+crecimiento_ingresos = st.number_input("Crecimiento anual de ingresos (%):", value=0.0) / 100
 crecimiento_costo_variable = st.number_input("Crecimiento anual de costo variable (%):", value=5.0) / 100
 crecimiento_gastos_fijos = st.number_input("Crecimiento anual de gastos fijos (%):", value=5.0) / 100
 
