@@ -26,8 +26,8 @@ gastos_fijos = []
 st.subheader("Ingresar los flujos de caja")
 
 # Ingresar ingresos, costos variables y gastos fijos para cada año
-ingreso_base = st.number_input("Ingresos para el primer año:", value=100000.00)
-costo_variable_base = st.number_input("Porcentaje de costo variable para el primer año (%):", value=40.0) / 100
+ingreso_base = st.number_input("Ingresos para el primer año:", value=0.00)
+costo_variable_base = st.number_input("Porcentaje de costo variable para el primer año (%):", value=0.0) / 100
 gasto_fijo_base = st.number_input("Gastos fijos para el primer año:", value=20000.00)
 
 for i in range(n_años):
